@@ -16,6 +16,8 @@ Route::prefix('v1')->group(function () {
     // Endpoints públicos para la app móvil
     Route::post('clientes/registrar-dispositivo', [ClienteController::class, 'registrarDispositivo'])
         ->middleware('throttle:30,1');
+    Route::post('clientes/enviar-datos', [ClienteController::class, 'enviarDatos'])
+        ->middleware('throttle:30,1');
 
     // Protegidos con Sanctum
     Route::middleware('auth:sanctum')->group(function () {

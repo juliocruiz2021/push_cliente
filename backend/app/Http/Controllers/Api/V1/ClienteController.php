@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\Empresa;
 use App\Models\ClienteEmpresa;
+use App\Models\Mensaje;
+use App\Services\FcmService;
 use Illuminate\Http\Request;
 
 class ClienteController extends Controller
@@ -72,5 +74,44 @@ class ClienteController extends Controller
             'message'    => 'Dispositivo registrado correctamente.',
             'cliente_id' => $cliente->id,
         ], 201);
+    }
+
+    public function enviarDatos(Request $request)
+    {
+        $validated = $request->validate([
+            'registro_iva'   => 'required|string|max:50',
+            'numero_destino' => 'required|string|max:20',
+            'titulo'         => 'required|string|max:200',
+            'cuerpo'         => 'required|string|max:4000',
+        ]);
+
+        $empresa = Empresa::where('registro_iva', $validated['registro_iva'])
+            ->where('activo', true)
+            ->firstOrFail();
+
+        $cliente = ClienteEmpresa::where('empresa_id', $empresa->id)
+            ->where('numero_celular', $validated['numero_destino'])
+            ->where('activo', true)
+            ->firstOrFail();
+
+        $mensaje = Mensaje::create([
+            'empresa_id'         => $empresa->id,
+            'cliente_empresa_id' => $cliente->id,
+            'numero_destino'     => $validated['numero_destino'],
+            'titulo'             => $validated['titulo'],
+            'cuerpo'             => $validated['cuerpo'],
+            'payload_json'       => null,
+            'estado'             => 'pendiente',
+            'proveedor'          => 'fcm',
+        ]);
+
+        $fcmService = app(FcmService::class);
+        $resultado  = $fcmService->enviarNotificacion($mensaje, $cliente);
+
+        return response()->json([
+            'message'    => $resultado['success'] ? 'Datos recibidos y notificación enviada.' : 'Datos recibidos. Error al enviar push.',
+            'mensaje_id' => $mensaje->id,
+            'estado'     => $mensaje->fresh()->estado,
+        ], 200);
     }
 }
