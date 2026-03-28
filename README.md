@@ -74,6 +74,7 @@ npm run dev
 
 ## Documentacion importante
 
+- [CLAUDE.md](CLAUDE.md)
 - [API.md](API.md)
 - [PROJECT_CONTEXT.md](PROJECT_CONTEXT.md)
 - [CONTEXTO_CODEX.md](CONTEXTO_CODEX.md)
