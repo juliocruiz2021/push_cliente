@@ -165,6 +165,7 @@ Esto permite que un telefono registrado en otra empresa confirme la recepcion si
 
 - El panel usa Bearer token; no usa sesion stateful por cookies.
 - En produccion el panel y la API salen por Apache reverse proxy con Let's Encrypt.
+- En este VPS, Apache tiene ModSecurity delante del proxy. Para `facturame.appsigasv.com` hay que permitir `PUT` y `DELETE` sobre `/api/`; la correccion productiva actual usa `SecRuleRemoveById 911100` en ese vhost.
 - El sitio legado `appsigasv.com` no debe tocarse; `facturame.appsigasv.com` vive aparte.
 - Al desplegar, ignorar archivos runtime no versionables:
   - `backend/storage/`

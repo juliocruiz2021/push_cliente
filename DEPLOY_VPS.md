@@ -160,6 +160,29 @@ sudo apt install -y certbot python3-certbot-nginx
 sudo certbot --nginx -d api.tu-dominio.com -d panel.tu-dominio.com
 ```
 
+## Si publicas por Apache reverse proxy + ModSecurity
+
+En `facturame.appsigasv.com` se publico asi:
+
+- Apache expone `80/443`
+- Apache hace proxy al panel Nginx en `8081`
+- Apache hace proxy a la API Nginx en `8082`
+
+Importante:
+
+- Si Apache tiene ModSecurity delante del proxy, `PUT` y `DELETE` pueden quedar bloqueados aunque Laravel y Nginx esten bien.
+- En ese caso, habilita la API del subdominio quitando la regla CRS `911100` solo para `/api/`.
+
+Ejemplo dentro del vhost Apache:
+
+```apache
+<IfModule security2_module>
+    <LocationMatch "^/api/">
+        SecRuleRemoveById 911100
+    </LocationMatch>
+</IfModule>
+```
+
 ## APK con defaults de produccion
 
 En `facturame` ya existe el script:
