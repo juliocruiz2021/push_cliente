@@ -1,5 +1,6 @@
-import { NavLink, Outlet } from 'react-router-dom';
+import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { NotifProvider, useNotif } from '../contexts/NotifContext';
 
 const navItems = [
   {
@@ -44,7 +45,37 @@ const navItems = [
   },
 ];
 
-export default function Layout() {
+// ── Campanita con badge ────────────────────────────────────────────────────────
+function NotifBell() {
+  const navigate              = useNavigate();
+  const { unreadCount, marcarLeidos } = useNotif();
+
+  const handleClick = () => {
+    marcarLeidos();
+    navigate('/mensajes');
+  };
+
+  return (
+    <button
+      onClick={handleClick}
+      className="relative p-1.5 rounded-lg text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
+      title="Ver mensajes nuevos"
+    >
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+          d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+      </svg>
+      {unreadCount > 0 && (
+        <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-0.5 leading-none">
+          {unreadCount > 99 ? '99+' : unreadCount}
+        </span>
+      )}
+    </button>
+  );
+}
+
+// ── Layout interno (usa el contexto) ──────────────────────────────────────────
+function LayoutInner() {
   const { user, logout } = useAuth();
 
   return (
@@ -99,7 +130,8 @@ export default function Layout() {
         {/* Top header */}
         <header className="bg-white shadow-sm px-6 py-3 flex items-center justify-between">
           <h1 className="text-lg font-semibold text-gray-800">Panel de Control</h1>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <NotifBell />
             <span className="text-sm text-gray-600">
               Hola, <span className="font-medium text-gray-800">{user?.name}</span>
             </span>
@@ -122,5 +154,14 @@ export default function Layout() {
         </main>
       </div>
     </div>
+  );
+}
+
+// ── Export: envuelve con el proveedor ─────────────────────────────────────────
+export default function Layout() {
+  return (
+    <NotifProvider>
+      <LayoutInner />
+    </NotifProvider>
   );
 }

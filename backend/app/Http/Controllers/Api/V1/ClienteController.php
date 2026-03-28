@@ -44,7 +44,8 @@ class ClienteController extends Controller
         $validated = $request->validate([
             'registro_iva'   => 'required|string|max:50',
             'numero_celular' => 'required|string|max:20',
-            'nombre_usuario' => 'required|string|max:150',
+            'nombre_usuario'  => 'required|string|max:150',
+            'nombre_servidor' => 'nullable|string|max:150',
             'device_uuid'    => 'nullable|string|max:100',
             'fcm_token'      => 'required|string',
             'plataforma'     => 'nullable|in:android,ios,web',
@@ -61,7 +62,8 @@ class ClienteController extends Controller
                 'numero_celular' => $validated['numero_celular'],
             ],
             [
-                'nombre_usuario' => $validated['nombre_usuario'],
+                'nombre_usuario'  => $validated['nombre_usuario'],
+                'nombre_servidor' => $validated['nombre_servidor'] ?? null,
                 'device_uuid'    => $validated['device_uuid'] ?? null,
                 'fcm_token'      => $validated['fcm_token'],
                 'plataforma'     => $validated['plataforma'] ?? 'android',
@@ -78,6 +80,8 @@ class ClienteController extends Controller
 
     public function enviarDatos(Request $request)
     {
+        \Illuminate\Support\Facades\Log::info('enviarDatos request: ' . json_encode($request->all()));
+
         $validated = $request->validate([
             'registro_iva'   => 'required|string|max:50',
             'numero_destino' => 'required|string|max:20',
@@ -105,8 +109,14 @@ class ClienteController extends Controller
             'proveedor'          => 'fcm',
         ]);
 
-        $fcmService = app(FcmService::class);
-        $resultado  = $fcmService->enviarNotificacion($mensaje, $cliente);
+        try {
+            $fcmService = app(FcmService::class);
+            $resultado  = $fcmService->enviarNotificacion($mensaje, $cliente);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('FcmService error: ' . $e->getMessage());
+            $resultado = ['success' => false, 'error' => 'FCM no configurado'];
+            $mensaje->update(['estado' => 'fallido']);
+        }
 
         return response()->json([
             'message'    => $resultado['success'] ? 'Datos recibidos y notificación enviada.' : 'Datos recibidos. Error al enviar push.',

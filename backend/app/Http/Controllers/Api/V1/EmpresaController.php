@@ -28,7 +28,9 @@ class EmpresaController extends Controller
             });
         }
 
-        $empresas = $query->orderBy('nombre')->paginate($request->per_page ?? 20);
+        $empresas = $query->with('clientes:id,empresa_id,nombre_servidor')
+            ->orderBy('nombre')
+            ->paginate($request->per_page ?? 20);
 
         return response()->json($empresas);
     }

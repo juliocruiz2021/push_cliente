@@ -97,7 +97,7 @@ export default function Clientes() {
         <table className="min-w-full divide-y divide-gray-100">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Cliente</th>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Cliente / Servidor</th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Empresa</th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Plataforma</th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Versión</th>
@@ -127,6 +127,9 @@ export default function Clientes() {
                 <tr key={cliente.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4">
                     <p className="font-medium text-gray-800 text-sm">{cliente.nombre_usuario}</p>
+                    {cliente.nombre_servidor && (
+                      <p className="text-xs text-indigo-500 font-medium">{cliente.nombre_servidor}</p>
+                    )}
                     <p className="text-xs text-gray-400">{cliente.numero_celular}</p>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600">

@@ -32,5 +32,6 @@ Route::prefix('v1')->group(function () {
 
         Route::post('mensajes/enviar', [MensajeController::class, 'enviar']);
         Route::get('mensajes/historial', [MensajeController::class, 'historial']);
+        Route::get('mensajes/nuevos', [MensajeController::class, 'nuevos']);
     });
 });

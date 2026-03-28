@@ -170,6 +170,7 @@ export default function Empresas() {
             <tr>
               <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Empresa</th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Registro IVA</th>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Servidor(es)</th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Estado</th>
               <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Acciones</th>
             </tr>
@@ -178,7 +179,7 @@ export default function Empresas() {
             {isLoading ? (
               Array.from({ length: 5 }).map((_, i) => (
                 <tr key={i}>
-                  {Array.from({ length: 4 }).map((_, j) => (
+                  {Array.from({ length: 5 }).map((_, j) => (
                     <td key={j} className="px-6 py-4">
                       <div className="h-4 bg-gray-100 rounded animate-pulse" />
                     </td>
@@ -187,7 +188,7 @@ export default function Empresas() {
               ))
             ) : empresas.length === 0 ? (
               <tr>
-                <td colSpan={4} className="px-6 py-12 text-center text-gray-400 text-sm">
+                <td colSpan={5} className="px-6 py-12 text-center text-gray-400 text-sm">
                   No se encontraron empresas.
                 </td>
               </tr>
@@ -198,6 +199,12 @@ export default function Empresas() {
                     <p className="font-medium text-gray-800 text-sm">{empresa.nombre}</p>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600">{empresa.registro_iva}</td>
+                  <td className="px-6 py-4">
+                    {[...new Set((empresa.clientes ?? []).map(c => c.nombre_servidor).filter(Boolean))].map((s) => (
+                      <span key={s} className="inline-block bg-indigo-50 text-indigo-600 text-xs font-medium px-2 py-0.5 rounded-full mr-1">{s}</span>
+                    ))}
+                    {!(empresa.clientes ?? []).some(c => c.nombre_servidor) && <span className="text-gray-400 text-xs">—</span>}
+                  </td>
                   <td className="px-6 py-4">
                     <StatusBadge activo={empresa.activo} />
                   </td>
@@ -257,6 +264,19 @@ export default function Empresas() {
         title={editingEmpresa ? 'Editar empresa' : 'Nueva empresa'}
       >
         <form onSubmit={handleSubmit} className="space-y-4">
+          {editingEmpresa && (() => {
+            const servidores = [...new Set((editingEmpresa.clientes ?? []).map(c => c.nombre_servidor).filter(Boolean))];
+            return servidores.length > 0 ? (
+              <div className="bg-indigo-50 border border-indigo-100 rounded-lg px-4 py-3">
+                <p className="text-xs font-semibold text-indigo-500 uppercase mb-1">Servidor(es) registrados</p>
+                <div className="flex flex-wrap gap-1">
+                  {servidores.map((s) => (
+                    <span key={s} className="bg-indigo-100 text-indigo-700 text-sm font-medium px-3 py-0.5 rounded-full">{s}</span>
+                  ))}
+                </div>
+              </div>
+            ) : null;
+          })()}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Registro IVA</label>
             <input

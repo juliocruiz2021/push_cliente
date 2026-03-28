@@ -24,6 +24,7 @@ class ClienteEmpresa extends Model
         'empresa_id',
         'numero_celular',
         'nombre_usuario',
+        'nombre_servidor',
         'device_uuid',
         'fcm_token',
         'plataforma',

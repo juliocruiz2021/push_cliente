@@ -56,19 +56,66 @@ class MensajeController extends Controller
     public function historial(Request $request)
     {
         $request->validate([
-            'registro_iva' => 'required|string',
+            'registro_iva' => 'nullable|string',
+            'estado'       => 'nullable|in:enviado,pendiente,fallido',
+            'fecha_desde'  => 'nullable|date',
+            'fecha_hasta'  => 'nullable|date',
+            'search'       => 'nullable|string|max:100',
             'per_page'     => 'nullable|integer|min:1|max:100',
         ]);
 
-        $empresa = Empresa::where('registro_iva', $request->registro_iva)
-            ->where('activo', true)
-            ->firstOrFail();
+        $query = Mensaje::with([
+                'clienteEmpresa:id,nombre_usuario,nombre_servidor,numero_celular',
+                'empresa:id,nombre',
+            ])
+            ->orderByDesc('created_at');
 
-        $mensajes = Mensaje::where('empresa_id', $empresa->id)
-            ->with('clienteEmpresa:id,nombre_usuario,numero_celular')
+        if ($request->filled('registro_iva')) {
+            $empresa = Empresa::where('registro_iva', $request->registro_iva)
+                ->where('activo', true)
+                ->firstOrFail();
+            $query->where('empresa_id', $empresa->id);
+        }
+
+        if ($request->filled('estado')) {
+            $query->where('estado', $request->estado);
+        }
+
+        if ($request->filled('fecha_desde')) {
+            $query->whereDate('created_at', '>=', $request->fecha_desde);
+        }
+
+        if ($request->filled('fecha_hasta')) {
+            $query->whereDate('created_at', '<=', $request->fecha_hasta);
+        }
+
+        if ($request->filled('search')) {
+            $query->where(function ($q) use ($request) {
+                $q->where('titulo', 'ilike', '%' . $request->search . '%')
+                  ->orWhere('numero_destino', 'ilike', '%' . $request->search . '%')
+                  ->orWhere('cuerpo', 'ilike', '%' . $request->search . '%');
+            });
+        }
+
+        return response()->json($query->paginate($request->per_page ?? 20));
+    }
+
+    public function nuevos(Request $request)
+    {
+        $request->validate(['desde' => 'required|date']);
+
+        $mensajes = Mensaje::with([
+                'clienteEmpresa:id,nombre_usuario,nombre_servidor,numero_celular',
+                'empresa:id,nombre',
+            ])
+            ->where('created_at', '>', $request->desde)
             ->orderByDesc('created_at')
-            ->paginate($request->per_page ?? 20);
+            ->limit(20)
+            ->get();
 
-        return response()->json($mensajes);
+        return response()->json([
+            'count'    => $mensajes->count(),
+            'mensajes' => $mensajes,
+        ]);
     }
 }
