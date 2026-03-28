@@ -1,49 +1,61 @@
 # Push Cliente
 
-Sistema de envío de notificaciones push a clientes de múltiples empresas a través de Firebase Cloud Messaging (FCM).
+Backend Laravel + panel React del sistema de notificaciones push que trabaja junto con la app Flutter `facturame`.
 
-## Descripción
+## Produccion actual
 
-Push Cliente es una plataforma backend + panel web que permite a empresas registradas enviar notificaciones push a sus usuarios móviles. Las aplicaciones móviles registran su token FCM en el sistema; desde el panel administrativo se pueden enviar mensajes individuales con payload personalizado.
+- Panel: `https://facturame.appsigasv.com`
+- API publica: `https://facturame.appsigasv.com/api/v1`
+- VPS: `138.197.36.98`
+- Rama activa: `feature/confirmacion-recepcion-limpieza`
 
-## Stack Tecnológico
+## Que resuelve hoy
 
-| Capa | Tecnología |
-|------|-----------|
-| Backend | Laravel 11 (PHP 8.2+) |
-| Autenticación API | Laravel Sanctum (tokens Bearer) |
-| Push Notifications | Firebase Cloud Messaging via `kreait/laravel-firebase` |
-| Base de datos | PostgreSQL 14+ |
-| Frontend | React 19 + Vite 6 |
-| Estilos | Tailwind CSS 3 |
-| Estado del servidor | TanStack Query v5 |
-| Routing frontend | React Router DOM v7 |
-| HTTP Client | Axios |
+- registro de dispositivos FCM
+- envio de notificaciones desde la app movil
+- envio de notificaciones desde el panel web
+- historial de mensajes
+- confirmacion de recepcion
+- sincronizacion de clientes compartidos por empresa
+- CRUD de empresas
+- CRUD manual de dispositivos desde el frontend
+- CRUD de usuarios administrativos
 
-## Estructura del Proyecto
+## Regla clave de negocio
 
-```
+El enrutamiento ya no depende de la empresa del dispositivo destino.
+
+Hoy el backend:
+- registra cada dispositivo por `(empresa_id, numero_celular)`
+- busca destinos por `numero_celular` global
+- envia a todos los dispositivos activos encontrados aunque pertenezcan a otras empresas
+- deduplica tokens FCM repetidos
+
+Esto permite que un mismo telefono reciba mensajes de varias empresas si comparte el mismo numero.
+
+## Estructura
+
+```text
 push_cliente/
-├── backend/          Laravel 11 API
-└── frontend/         React + Vite SPA
+├── backend/    Laravel 11 API
+└── frontend/   React + Vite SPA
 ```
 
-## Inicio Rápido
+## Stack
 
-### Prerrequisitos
+- Backend: Laravel 11 + PHP 8.4
+- Auth: Sanctum con Bearer token
+- Push: Firebase Cloud Messaging
+- DB: PostgreSQL
+- Frontend: React 19 + Vite + Tailwind CSS 3 + TanStack Query v5
 
-- PHP 8.2+ con extensiones: pdo_pgsql, mbstring, openssl, tokenizer, xml, ctype, json, bcmath
-- Composer 2.x
-- PostgreSQL 14+
-- Node.js 20+ y npm
-- Una cuenta de Firebase con proyecto configurado
+## Inicio rapido local
 
 ### Backend
 
 ```bash
 cd backend
 cp .env.example .env
-# Editar .env con credenciales reales
 composer install
 php artisan key:generate
 php artisan migrate
@@ -56,22 +68,24 @@ php artisan serve
 ```bash
 cd frontend
 cp .env.example .env
-# Editar .env si el backend no está en localhost:8000
 npm install
 npm run dev
 ```
 
-### Credenciales de Demo
+## Documentacion importante
 
-| Campo | Valor |
-|-------|-------|
-| Email | admin@pushcliente.com |
-| Password | Admin1234! |
+- [API.md](API.md)
+- [PROJECT_CONTEXT.md](PROJECT_CONTEXT.md)
+- [CONTEXTO_CODEX.md](CONTEXTO_CODEX.md)
+- [DEPLOY_VPS.md](DEPLOY_VPS.md)
+- [INSTALL.md](INSTALL.md)
+- [SECURITY.md](SECURITY.md)
 
-## Documentación Adicional
+## Nota de infraestructura
 
-- [Guía de instalación detallada](INSTALL.md)
-- [Guía de despliegue en VPS](DEPLOY_VPS.md)
-- [Referencia de la API](API.md)
-- [Contexto del proyecto y arquitectura](PROJECT_CONTEXT.md)
-- [Medidas de seguridad](SECURITY.md)
+En produccion, Apache publica `facturame.appsigasv.com` y hace reverse proxy hacia Nginx:
+
+- panel en `8081`
+- API en `8082`
+
+Como Apache tiene ModSecurity delante del proxy, el vhost productivo excluye la regla CRS `911100` sobre `/api/` para permitir `PUT` y `DELETE` del frontend.

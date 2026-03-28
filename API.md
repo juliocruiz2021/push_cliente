@@ -1,117 +1,77 @@
 # Referencia de la API
 
-Base URL: `http://localhost:8000/api/v1`
+## Base URL
 
-Todos los endpoints devuelven `Content-Type: application/json`.
+- Produccion: `https://facturame.appsigasv.com/api/v1`
+- Local: `http://localhost:8000/api/v1`
 
-Los endpoints protegidos requieren el header:
-```
+Todos los endpoints responden JSON.
+
+Los endpoints protegidos requieren:
+
+```http
 Authorization: Bearer {token}
 ```
 
----
-
-## Autenticación
+## Auth
 
 ### POST `/auth/login`
 
-Autentica un usuario administrador y devuelve un token Bearer.
+Autentica un administrador del panel.
 
-**Rate limit:** 10 peticiones por minuto.
+Request:
 
-**Request:**
 ```json
 {
-  "email": "admin@pushcliente.com",
-  "password": "Admin1234!"
+  "email": "juliocruiz@yahoo.com",
+  "password": "Zabpod1932$43"
 }
 ```
 
-**Response 200:**
+Response 200:
+
 ```json
 {
-  "token": "1|abc123...",
+  "token": "1|abc...",
   "user": {
     "id": 1,
     "name": "Administrador",
-    "email": "admin@pushcliente.com"
+    "email": "juliocruiz@yahoo.com"
   }
 }
 ```
-
-**Response 422 (credenciales incorrectas):**
-```json
-{
-  "message": "Los datos proporcionados no son válidos.",
-  "errors": {
-    "email": ["Credenciales incorrectas."]
-  }
-}
-```
-
----
 
 ### POST `/auth/logout`
 
-Invalida el token actual. Requiere autenticación.
-
-**Response 200:**
-```json
-{
-  "message": "Sesión cerrada."
-}
-```
-
----
+Invalida el token actual.
 
 ### GET `/auth/me`
 
-Devuelve el usuario autenticado. Requiere autenticación.
+Devuelve el usuario autenticado.
 
-**Response 200:**
-```json
-{
-  "id": 1,
-  "name": "Administrador",
-  "email": "admin@pushcliente.com",
-  "created_at": "2024-01-01T00:00:00.000000Z"
-}
-```
-
----
-
-## Clientes (App Móvil)
+## App movil - endpoints publicos
 
 ### POST `/clientes/registrar-dispositivo`
 
-Registra o actualiza el token FCM de un dispositivo móvil. Endpoint público, sin autenticación.
+Registra o actualiza un dispositivo por llave `(empresa_id, numero_celular)`.
 
-**Rate limit:** 30 peticiones por minuto.
+Request:
 
-**Request:**
 ```json
 {
   "registro_iva": "12345-6",
-  "numero_celular": "+59170000000",
-  "nombre_usuario": "Juan Pérez",
+  "numero_celular": "70001111",
+  "nombre_usuario": "OPERADOR 1",
+  "nombre_servidor": "SIGA1",
   "device_uuid": "uuid-del-dispositivo",
-  "fcm_token": "FCM_TOKEN_LARGO_DEL_DISPOSITIVO",
+  "fcm_token": "token-fcm",
   "plataforma": "android",
-  "version_app": "1.0.0"
+  "version_app": "1.1.0"
 }
 ```
 
-| Campo | Tipo | Requerido | Descripción |
-|-------|------|-----------|-------------|
-| `registro_iva` | string | Sí | RUC/NIT de la empresa (debe existir y estar activa) |
-| `numero_celular` | string | Sí | Identificador único del usuario en la empresa |
-| `nombre_usuario` | string | Sí | Nombre para mostrar |
-| `device_uuid` | string | No | UUID del dispositivo |
-| `fcm_token` | string | Sí | Token FCM del dispositivo |
-| `plataforma` | enum | No | `android`, `ios`, `web` (default: `android`) |
-| `version_app` | string | No | Versión de la app móvil |
+Response 201:
 
-**Response 201:**
 ```json
 {
   "message": "Dispositivo registrado correctamente.",
@@ -119,22 +79,50 @@ Registra o actualiza el token FCM de un dispositivo móvil. Endpoint público, s
 }
 ```
 
-**Response 404 (empresa no encontrada o inactiva):**
+### POST `/clientes/enviar-datos`
+
+Recibe un envio desde la app Flutter.
+
+Regla actual:
+- busca todos los dispositivos activos con `numero_celular = numero_destino`
+- no filtra por empresa destino
+- deduplica `fcm_token` repetidos
+- crea un solo registro en `mensajes`
+
+Request:
+
 ```json
 {
-  "message": "Recurso Empresa no encontrado."
+  "registro_iva": "12345-6",
+  "numero_destino": "70001111",
+  "titulo": "Nuevo cliente",
+  "cuerpo": "{\"empresa\":\"EMPRESA A\",\"servidor\":\"SIGA1\",\"data\":{\"nombre\":\"JUAN PEREZ\"}}"
 }
 ```
 
----
+Response 200:
+
+```json
+{
+  "message": "Datos recibidos y notificacion enviada.",
+  "mensaje_id": 15,
+  "estado": "enviado",
+  "dispositivos_notificados": 2
+}
+```
 
 ### POST `/clientes/confirmar-recepcion`
 
-Confirma que el destinatario abrió el detalle de una notificación. Endpoint público, sin autenticación.
+Confirma que el destinatario abrio el detalle.
 
-**Rate limit:** 60 peticiones por minuto.
+Regla actual:
+- valida `mensaje_id`
+- valida que `numero_celular` coincida con `mensajes.numero_destino`
+- valida que exista un dispositivo activo con ese numero
+- ya no depende de la empresa emisora
 
-**Request:**
+Request:
+
 ```json
 {
   "mensaje_id": 15,
@@ -144,14 +132,10 @@ Confirma que el destinatario abrió el detalle de una notificación. Endpoint p�
 }
 ```
 
-| Campo | Tipo | Requerido | Descripción |
-|-------|------|-----------|-------------|
-| `mensaje_id` | integer | Sí | ID del mensaje enviado por el backend |
-| `registro_iva` | string | Sí | Empresa propietaria del mensaje |
-| `numero_celular` | string | Sí | Debe coincidir con `numero_destino` del mensaje |
-| `device_uuid` | string | No | UUID del dispositivo que confirma |
+`registro_iva` se mantiene por compatibilidad, pero ya no define la autorizacion de la confirmacion.
 
-**Response 200:**
+Response 200:
+
 ```json
 {
   "message": "Recepcion confirmada correctamente.",
@@ -160,347 +144,95 @@ Confirma que el destinatario abrió el detalle de una notificación. Endpoint p�
 }
 ```
 
-**Response 403:**
-```json
-{
-  "message": "Este dispositivo no corresponde al destinatario del mensaje."
-}
-```
-
----
-
 ### POST `/clientes-compartidos/sync`
 
-Sincroniza la lista de clientes compartidos de una empresa. Endpoint público, sin autenticación.
+Sincroniza clientes compartidos por empresa.
 
-**Rate limit:** 30 peticiones por minuto.
+### GET `/clientes-compartidos`
 
-**Request:**
+Devuelve clientes compartidos filtrables por empresa y busqueda.
+
+## Panel web - endpoints protegidos
+
+### Dashboard
+
+- `GET /dashboard`
+
+### Empresas
+
+- `GET /empresas`
+- `POST /empresas`
+- `PUT /empresas/{id}`
+- `DELETE /empresas/{id}`
+
+Campos principales:
+
 ```json
 {
+  "nombre": "EMPRESA DE PRUEBA",
   "registro_iva": "12345-6",
-  "numero_celular": "70001111",
-  "nombre_usuario": "OPERADOR 1",
-  "contactos": [
-    {
-      "sync_id": "sync-001",
-      "updated_at": "2026-03-28T04:00:00Z",
-      "nombre": "JUAN PEREZ",
-      "dui": "12345678-9",
-      "registro_iva": "99887-1",
-      "giro": "COMERCIAL",
-      "direccion": "SAN SALVADOR",
-      "celular": "7000-0000",
-      "email": "juan@example.com"
-    }
-  ]
-}
-```
-
-| Campo | Tipo | Requerido | Descripción |
-|-------|------|-----------|-------------|
-| `registro_iva` | string | Sí | Empresa dueña de la lista compartida |
-| `numero_celular` | string | No | Identificador del dispositivo que sincroniza |
-| `nombre_usuario` | string | No | Nombre del operador que hizo el cambio |
-| `contactos` | array | No | Lista completa de clientes locales a consolidar |
-| `contactos[].sync_id` | string | Sí | ID estable por cliente para sincronización |
-| `contactos[].updated_at` | date | No | Fecha de última edición del cliente |
-| `contactos[].nombre` | string | Sí | Nombre del cliente |
-| `contactos[].dui` | string | No | DUI del cliente |
-| `contactos[].registro_iva` | string | No | Registro IVA del cliente |
-| `contactos[].giro` | string | No | Giro del cliente |
-| `contactos[].direccion` | string | No | Dirección del cliente |
-| `contactos[].celular` | string | No | Teléfono del cliente |
-| `contactos[].email` | string | No | Email del cliente |
-
-**Response 200:**
-```json
-{
-  "message": "Contactos sincronizados correctamente.",
-  "contactos": [
-    {
-      "id": 1,
-      "empresa_id": 1,
-      "sync_id": "sync-001",
-      "nombre": "JUAN PEREZ",
-      "dui": "12345678-9",
-      "registro_iva": "99887-1",
-      "giro": "COMERCIAL",
-      "direccion": "SAN SALVADOR",
-      "celular": "7000-0000",
-      "email": "juan@example.com",
-      "creado_por": "OPERADOR 1",
-      "actualizado_por": "OPERADOR 1",
-      "created_at": "2026-03-28T04:00:00.000000Z",
-      "updated_at": "2026-03-28T04:00:00.000000Z"
-    }
-  ],
-  "server_time": "2026-03-28T04:00:05.000000Z"
-}
-```
-
----
-
-## Dashboard
-
-### GET `/dashboard`
-
-Devuelve estadísticas generales. Requiere autenticación. Respuesta cacheada por 60 segundos.
-
-**Response 200:**
-```json
-{
-  "empresas_activas": 3,
-  "clientes_activos": 127,
-  "mensajes_hoy": 45,
-  "mensajes_fallidos": 2
-}
-```
-
----
-
-## Empresas
-
-### GET `/empresas`
-
-Lista empresas con paginación. Requiere autenticación.
-
-**Query params:**
-| Param | Tipo | Descripción |
-|-------|------|-------------|
-| `page` | int | Número de página (default: 1) |
-| `per_page` | int | Resultados por página (default: 20) |
-| `search` | string | Buscar por nombre o registro_iva |
-| `activo` | boolean | Filtrar por estado |
-
-**Response 200:**
-```json
-{
-  "data": [
-    {
-      "id": 1,
-      "registro_iva": "12345-6",
-      "nombre": "EMPRESA DE PRUEBA",
-      "activo": true,
-      "created_at": "2024-01-01T00:00:00.000000Z",
-      "updated_at": "2024-01-01T00:00:00.000000Z"
-    }
-  ],
-  "links": { "first": "...", "last": "...", "prev": null, "next": null },
-  "meta": {
-    "current_page": 1,
-    "from": 1,
-    "last_page": 1,
-    "per_page": 20,
-    "to": 1,
-    "total": 1
-  }
-}
-```
-
----
-
-### POST `/empresas`
-
-Crea una nueva empresa. Requiere autenticación.
-
-**Request:**
-```json
-{
-  "registro_iva": "98765-4",
-  "nombre": "MI EMPRESA S.A.",
+  "nombre_servidor": "SIGA1",
   "activo": true
 }
 ```
 
-**Response 201:**
+### Clientes / dispositivos
+
+- `GET /clientes`
+- `POST /clientes`
+- `PUT /clientes/{cliente}`
+- `DELETE /clientes/{cliente}`
+
+Estos endpoints alimentan el modulo `Clientes` del frontend y permiten alta manual de dispositivos.
+
+Request de creacion:
+
 ```json
 {
-  "message": "Empresa creada correctamente.",
-  "empresa": {
-    "id": 2,
-    "registro_iva": "98765-4",
-    "nombre": "MI EMPRESA S.A.",
-    "activo": true,
-    "created_at": "2024-01-15T10:00:00.000000Z",
-    "updated_at": "2024-01-15T10:00:00.000000Z"
+  "empresa_id": 1,
+  "numero_celular": "70001111",
+  "nombre_usuario": "OPERADOR 1",
+  "nombre_servidor": "SIGA1",
+  "device_uuid": "uuid-del-dispositivo",
+  "fcm_token": "token-fcm-opcional",
+  "plataforma": "android",
+  "version_app": "1.1.0",
+  "activo": true
+}
+```
+
+Response 201:
+
+```json
+{
+  "message": "Dispositivo creado correctamente.",
+  "cliente": {
+    "id": 42,
+    "empresa_id": 1,
+    "numero_celular": "70001111",
+    "nombre_usuario": "OPERADOR 1",
+    "activo": true
   }
 }
 ```
 
-**Response 422 (registro_iva duplicado):**
-```json
-{
-  "message": "Los datos proporcionados no son válidos.",
-  "errors": {
-    "registro_iva": ["The registro iva has already been taken."]
-  }
-}
-```
+### Mensajes
 
----
+- `POST /mensajes/enviar`
+- `GET /mensajes/historial`
+- `GET /mensajes/nuevos`
 
-### GET `/empresas/{id}`
+`POST /mensajes/enviar` usa la misma logica global por `numero_destino` que el endpoint publico de la app.
 
-Obtiene una empresa por ID. Incluye contadores de clientes y mensajes. Requiere autenticación.
+### Usuarios del panel
 
-**Response 200:**
-```json
-{
-  "id": 1,
-  "registro_iva": "12345-6",
-  "nombre": "EMPRESA DE PRUEBA",
-  "activo": true,
-  "clientes_count": 15,
-  "mensajes_count": 87,
-  "created_at": "2024-01-01T00:00:00.000000Z",
-  "updated_at": "2024-01-01T00:00:00.000000Z"
-}
-```
+- `GET /admin-users`
+- `POST /admin-users`
+- `PUT /admin-users/{adminUser}`
+- `DELETE /admin-users/{adminUser}`
 
----
+## Notas operativas
 
-### PUT `/empresas/{id}`
-
-Actualiza una empresa. Requiere autenticación.
-
-**Request:** (todos los campos son opcionales)
-```json
-{
-  "nombre": "EMPRESA ACTUALIZADA S.A.",
-  "activo": false
-}
-```
-
-**Response 200:**
-```json
-{
-  "message": "Empresa actualizada correctamente.",
-  "empresa": { ... }
-}
-```
-
----
-
-### DELETE `/empresas/{id}`
-
-Elimina una empresa. Requiere autenticación.
-
-> **Advertencia:** Eliminar una empresa elimina en cascada todos sus clientes. Los mensajes quedan con `empresa_id` y `cliente_empresa_id` en NULL.
-
-**Response 200:**
-```json
-{
-  "message": "Empresa eliminada correctamente."
-}
-```
-
----
-
-## Mensajes
-
-### POST `/mensajes/enviar`
-
-Envía una notificación push a un cliente. Requiere autenticación.
-
-**Request:**
-```json
-{
-  "registro_iva": "12345-6",
-  "numero_destino": "+59170000000",
-  "titulo": "Pago recibido",
-  "cuerpo": "Su pago de Bs. 500 fue procesado correctamente.",
-  "payload": {
-    "orden_id": "ORD-2024-001",
-    "tipo": "pago",
-    "monto": "500"
-  }
-}
-```
-
-| Campo | Tipo | Requerido | Descripción |
-|-------|------|-----------|-------------|
-| `registro_iva` | string | Sí | RUC de la empresa |
-| `numero_destino` | string | Sí | Número de celular del cliente destino |
-| `titulo` | string | Sí | Título de la notificación (máx. 200 chars) |
-| `cuerpo` | string | Sí | Cuerpo del mensaje (máx. 1000 chars) |
-| `payload` | object | No | Datos adicionales enviados al dispositivo |
-
-**Response 200 (enviado exitosamente):**
-```json
-{
-  "message": "Notificación enviada.",
-  "mensaje_id": 101,
-  "estado": "enviado",
-  "error": null
-}
-```
-
-**Response 422 (error de envío FCM):**
-```json
-{
-  "message": "Error al enviar.",
-  "mensaje_id": 102,
-  "estado": "fallido",
-  "error": "Token inválido, fue eliminado"
-}
-```
-
-**Response 404 (cliente no registrado o empresa inactiva):**
-```json
-{
-  "message": "Recurso ClienteEmpresa no encontrado."
-}
-```
-
----
-
-### GET `/mensajes/historial`
-
-Lista el historial de mensajes de una empresa. Requiere autenticación.
-
-**Query params:**
-| Param | Tipo | Requerido | Descripción |
-|-------|------|-----------|-------------|
-| `registro_iva` | string | Sí | RUC de la empresa |
-| `per_page` | int | No | Resultados por página (default: 20, máx: 100) |
-| `page` | int | No | Número de página |
-
-**Response 200:**
-```json
-{
-  "data": [
-    {
-      "id": 101,
-      "empresa_id": 1,
-      "cliente_empresa_id": 42,
-      "numero_destino": "+59170000000",
-      "titulo": "Pago recibido",
-      "cuerpo": "Su pago fue procesado.",
-      "payload_json": { "orden_id": "ORD-001" },
-      "estado": "enviado",
-      "proveedor": "fcm",
-      "enviado_at": "2024-01-15T10:05:00.000000Z",
-      "created_at": "2024-01-15T10:04:58.000000Z",
-      "cliente_empresa": {
-        "id": 42,
-        "nombre_usuario": "Juan Pérez",
-        "numero_celular": "+59170000000"
-      }
-    }
-  ],
-  "meta": { "current_page": 1, "last_page": 5, "total": 87 }
-}
-```
-
----
-
-## Códigos de Error Comunes
-
-| Código | Descripción |
-|--------|-------------|
-| 401 | Token no proporcionado o inválido |
-| 404 | Recurso no encontrado |
-| 422 | Error de validación o negocio |
-| 429 | Rate limit excedido |
-| 500 | Error interno del servidor |
+- El frontend publicado en `facturame.appsigasv.com` usa estos endpoints sobre el mismo origen.
+- En este VPS, Apache tiene ModSecurity delante del proxy; el vhost de `facturame.appsigasv.com` excluye la regla `911100` en `/api/` para permitir `PUT` y `DELETE`.
+- El sitio productivo legado `appsigasv.com` no se toca; `facturame.appsigasv.com` corre separado.
