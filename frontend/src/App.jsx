@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard';
 import Empresas from './pages/Empresas';
 import Clientes from './pages/Clientes';
 import Mensajes from './pages/Mensajes';
+import Usuarios from './pages/Usuarios';
 
 /**
  * Protects routes that require authentication.
@@ -37,6 +38,7 @@ export default function App() {
         {/* Index redirect */}
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<Dashboard />} />
+        <Route path="usuarios" element={<Usuarios />} />
         <Route path="empresas" element={<Empresas />} />
         <Route path="clientes" element={<Clientes />} />
         <Route path="mensajes" element={<Mensajes />} />

@@ -10,6 +10,7 @@ Trabaja junto con la app móvil Flutter "Facturame".
 - Panel web productivo: `https://facturame.appsigasv.com`
 - La API pÃºblica para la app mÃ³vil sale por `https://facturame.appsigasv.com/api/v1`
 - En el VPS el panel y el backend siguen corriendo internamente en `8081` y `8082`, publicados por Apache reverse proxy + Let's Encrypt, sin tocar el sitio legado de `appsigasv.com`
+- El panel ya incluye mÃ³dulo de `Usuarios` para crear, editar y eliminar accesos administrativos
 
 | Proyecto | Repo | Branch activo |
 |---|---|---|

@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\V1\AdminUserController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\ClienteController;
 use App\Http\Controllers\Api\V1\ClienteCompartidoController;
@@ -30,6 +31,11 @@ Route::prefix('v1')->group(function () {
         Route::get('auth/me', [AuthController::class, 'me']);
 
         Route::get('dashboard', [DashboardController::class, 'index']);
+
+        Route::get('usuarios', [AdminUserController::class, 'index']);
+        Route::post('usuarios', [AdminUserController::class, 'store']);
+        Route::put('usuarios/{usuario}', [AdminUserController::class, 'update']);
+        Route::delete('usuarios/{usuario}', [AdminUserController::class, 'destroy']);
 
         Route::apiResource('empresas', EmpresaController::class);
 
