@@ -1,5 +1,17 @@
 <?php
 
+$allowedOrigins = array_values(array_filter(array_map(
+    static fn (string $origin): string => trim($origin),
+    explode(',', env(
+        'CORS_ALLOWED_ORIGINS',
+        implode(',', array_filter([
+            env('FRONTEND_URL'),
+            'http://localhost:5200',
+            'http://localhost:5173',
+        ]))
+    ))
+)));
+
 return [
 
     /*
@@ -19,7 +31,7 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => [env('FRONTEND_URL', 'http://localhost:5173'), 'http://localhost:5200'],
+    'allowed_origins' => $allowedOrigins,
 
     'allowed_origins_patterns' => [],
 

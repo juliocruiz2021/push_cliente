@@ -76,12 +76,13 @@ DB_DATABASE=push_cliente
 DB_USERNAME=postgres
 DB_PASSWORD=tu_password_real
 
-SANCTUM_STATEFUL_DOMAINS=localhost:5173
+SANCTUM_STATEFUL_DOMAINS=localhost:5200
 
-FIREBASE_CREDENTIALS=firebase-credentials.json
+FIREBASE_CREDENTIALS=storage/app/firebase-credentials.json
 FIREBASE_PROJECT_ID=tu-project-id-de-firebase
 
-FRONTEND_URL=http://localhost:5173
+FRONTEND_URL=http://localhost:5200
+CORS_ALLOWED_ORIGINS=http://localhost:5200,http://localhost:5173
 ```
 
 ### 2.3 Generar clave de aplicación
@@ -160,7 +161,7 @@ VITE_API_URL=http://localhost:8000/api/v1
 
 ```bash
 npm run dev
-# El servidor inicia en http://localhost:5173
+# El servidor inicia en http://localhost:5200
 ```
 
 ### 3.4 Build para producción
@@ -174,7 +175,7 @@ npm run build
 
 ## 4. Verificación de la Instalación
 
-1. Abrir `http://localhost:5173` en el navegador
+1. Abrir `http://localhost:5200` en el navegador
 2. Iniciar sesión con `admin@pushcliente.com` / `Admin1234!`
 3. El Dashboard debe mostrar estadísticas en 0 (base de datos vacía excepto la empresa demo)
 4. Navegar a **Empresas** — debe aparecer "EMPRESA DE PRUEBA"
@@ -192,6 +193,7 @@ APP_URL=https://tu-dominio.com
 
 SANCTUM_STATEFUL_DOMAINS=tu-frontend.com
 FRONTEND_URL=https://tu-frontend.com
+CORS_ALLOWED_ORIGINS=https://tu-frontend.com
 ```
 
 ### Optimizaciones Laravel

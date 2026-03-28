@@ -71,6 +71,7 @@ npm run dev
 ## Documentación Adicional
 
 - [Guía de instalación detallada](INSTALL.md)
+- [Guía de despliegue en VPS](DEPLOY_VPS.md)
 - [Referencia de la API](API.md)
 - [Contexto del proyecto y arquitectura](PROJECT_CONTEXT.md)
 - [Medidas de seguridad](SECURITY.md)

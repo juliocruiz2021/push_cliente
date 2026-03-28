@@ -15,9 +15,25 @@ class FcmService
 
     public function __construct()
     {
-        $credentialsPath = storage_path('app/firebase-credentials.json');
+        $credentialsPath = $this->resolveCredentialsPath();
         $factory = (new Factory)->withServiceAccount($credentialsPath);
         $this->messaging = $factory->createMessaging();
+    }
+
+    private function resolveCredentialsPath(): string
+    {
+        $configuredPath = env('FIREBASE_CREDENTIALS', 'storage/app/firebase-credentials.json');
+
+        if ($configuredPath === '') {
+            return storage_path('app/firebase-credentials.json');
+        }
+
+        $isAbsolutePath = str_starts_with($configuredPath, '/')
+            || preg_match('/^[A-Za-z]:\\\\/', $configuredPath) === 1;
+
+        return $isAbsolutePath
+            ? $configuredPath
+            : base_path($configuredPath);
     }
 
     public function enviarNotificacion(Mensaje $mensaje, ClienteEmpresa $cliente): array

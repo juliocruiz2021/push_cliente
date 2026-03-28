@@ -21,12 +21,12 @@ Esto protege contra ataques de fuerza bruta y abusos de registro masivo de dispo
 
 ## 3. CORS Configurado
 
-- La lista de orígenes permitidos se configura exclusivamente en la variable de entorno `FRONTEND_URL`.
+- La lista de orígenes permitidos se configura desde `CORS_ALLOWED_ORIGINS` y puede incluir varios dominios separados por coma.
 - Solo se permite el origen del frontend legítimo; no se usa `*` (wildcard).
 - Configurado en `config/cors.php` para todas las rutas `api/*`.
 
 ```php
-'allowed_origins' => [env('FRONTEND_URL', 'http://localhost:5173')],
+'allowed_origins' => $allowedOrigins,
 ```
 
 ## 4. Sin Exposición de Errores Internos en Producción
@@ -109,6 +109,7 @@ Las contraseñas de `AdminUser` se almacenan con el cast `hashed` de Laravel 11,
 - [ ] `.env` y `firebase-credentials.json` en `.gitignore`
 - [ ] HTTPS configurado en el servidor web
 - [ ] `FRONTEND_URL` apunta al dominio real (no `localhost`)
+- [ ] `CORS_ALLOWED_ORIGINS` apunta al panel real
 - [ ] `SANCTUM_STATEFUL_DOMAINS` actualizado al dominio real
 - [ ] Contraseña del admin por defecto cambiada
 - [ ] Backups automáticos de base de datos configurados
