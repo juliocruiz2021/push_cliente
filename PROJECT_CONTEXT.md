@@ -1,5 +1,14 @@
 # Contexto del Proyecto
 
+## Actualizacion 2026-03-28
+
+- El panel web productivo es `https://facturame.appsigasv.com`.
+- La API publica para la app movil sale por `https://facturame.appsigasv.com/api/v1`.
+- El modulo `Clientes` ya permite crear, editar y eliminar dispositivos manualmente desde el frontend.
+- El enrutamiento de notificaciones ya no filtra por empresa destino: ahora busca todos los dispositivos activos con el mismo `numero_celular`, aunque pertenezcan a otras empresas.
+- La confirmacion de recepcion ya no depende de la empresa emisora; valida por `mensaje_id + numero_celular (+ device_uuid opcional)`.
+- En este VPS, Apache tiene ModSecurity delante del proxy. Para que el frontend pueda usar `PUT` y `DELETE` sobre `/api/`, el vhost de `facturame.appsigasv.com` excluye la regla CRS `911100` en `/api/`.
+
 ## Modelo de Negocio
 
 Push Cliente es un sistema **multi-tenant** de notificaciones push. Cada **Empresa** tiene sus propios **Clientes** (usuarios de su aplicación móvil). Desde el panel web, los administradores del sistema envían notificaciones push a clientes específicos por número de celular.
