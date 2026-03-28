@@ -28,11 +28,11 @@ class FcmService
             }
 
             $notification = Notification::create($mensaje->titulo, $mensaje->cuerpo);
-            $data = $mensaje->payload_json ?? [];
+            $data = $this->buildDataPayload($mensaje, $cliente);
 
             $message = CloudMessage::withTarget('token', $cliente->fcm_token)
                 ->withNotification($notification)
-                ->withData(array_map('strval', $data));
+                ->withData($data);
 
             $this->messaging->send($message);
 
@@ -53,5 +53,27 @@ class FcmService
             $mensaje->update(['estado' => 'fallido']);
             return ['success' => false, 'error' => $e->getMessage()];
         }
+    }
+
+    private function buildDataPayload(Mensaje $mensaje, ClienteEmpresa $cliente): array
+    {
+        $mensaje->loadMissing('empresa:id,nombre');
+
+        $normalized = [];
+        foreach (($mensaje->payload_json ?? []) as $key => $value) {
+            if (!is_scalar($value) && $value !== null) {
+                $normalized[$key] = json_encode($value, JSON_UNESCAPED_UNICODE);
+                continue;
+            }
+
+            $normalized[$key] = (string) ($value ?? '');
+        }
+
+        $normalized['mensaje_id'] = (string) $mensaje->id;
+        $normalized['empresa'] = (string) ($mensaje->empresa?->nombre ?? '');
+        $normalized['servidor'] = (string) ($cliente->nombre_servidor ?? '');
+        $normalized['numero_destino'] = (string) $mensaje->numero_destino;
+
+        return $normalized;
     }
 }

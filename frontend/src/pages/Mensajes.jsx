@@ -30,6 +30,18 @@ function EstadoBadge({ estado }) {
   );
 }
 
+function RecepcionBadge({ confirmadaAt }) {
+  const classes = confirmadaAt
+    ? 'bg-emerald-100 text-emerald-700'
+    : 'bg-amber-100 text-amber-700';
+
+  return (
+    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${classes}`}>
+      {confirmadaAt ? 'Confirmada' : 'Pendiente'}
+    </span>
+  );
+}
+
 // Intenta parsear el cuerpo como JSON; devuelve null si no es válido.
 function parseCuerpo(cuerpo) {
   try { return JSON.parse(cuerpo); } catch { return null; }
@@ -213,16 +225,25 @@ function ModalDetalle({ msg, onClose }) {
           </div>
 
           {/* Destinatario y estado */}
-          <div className="grid grid-cols-2 gap-3 text-sm">
+          <div className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-3">
             <div>
               <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Operador</p>
               <p className="text-gray-800">{operador} · <span className="text-gray-500">{destino}</span></p>
             </div>
             <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Estado / Fecha</p>
+              <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Envio</p>
               <div className="flex items-center gap-2 flex-wrap">
                 <EstadoBadge estado={msg.estado} />
                 <span className="text-xs text-gray-500">{formatDate(msg.enviado_at ?? msg.created_at)}</span>
+              </div>
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Recepcion</p>
+              <div className="flex items-center gap-2 flex-wrap">
+                <RecepcionBadge confirmadaAt={msg.recepcion_confirmada_at} />
+                <span className="text-xs text-gray-500">
+                  {msg.recepcion_confirmada_at ? formatDate(msg.recepcion_confirmada_at) : 'Sin confirmar'}
+                </span>
               </div>
             </div>
           </div>
@@ -280,6 +301,7 @@ export default function Mensajes() {
   const [filters, setFilters]                     = useState({
     registro_iva: '',
     estado: '',
+    recepcion: '',
     fecha_desde: todayISO(),
     fecha_hasta: todayISO(),
     search: '',
@@ -305,6 +327,7 @@ export default function Mensajes() {
     per_page: 20,
     ...(filters.registro_iva && { registro_iva: filters.registro_iva }),
     ...(filters.estado && { estado: filters.estado }),
+    ...(filters.recepcion && { recepcion: filters.recepcion }),
     ...(filters.fecha_desde && { fecha_desde: filters.fecha_desde }),
     ...(filters.fecha_hasta && { fecha_hasta: filters.fecha_hasta }),
     ...(filters.search.trim() && { search: filters.search.trim() }),
@@ -314,6 +337,7 @@ export default function Mensajes() {
     queryKey: ['historial', queryParams],
     queryFn: () => apiClient.get('/mensajes/historial', { params: queryParams }).then((r) => r.data),
     keepPreviousData: true,
+    refetchInterval: 20_000,
   });
 
   const mensajes = data?.data ?? [];
@@ -325,7 +349,7 @@ export default function Mensajes() {
   };
 
   const limpiarFiltros = () => {
-    setFilters({ registro_iva: '', estado: '', fecha_desde: todayISO(), fecha_hasta: todayISO(), search: '' });
+    setFilters({ registro_iva: '', estado: '', recepcion: '', fecha_desde: todayISO(), fecha_hasta: todayISO(), search: '' });
     setPage(1);
   };
 
@@ -390,7 +414,7 @@ export default function Mensajes() {
 
       {/* Filtros */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
           <select value={filters.registro_iva} onChange={(e) => setFilter('registro_iva', e.target.value)} className={inp}>
             <option value="">Todas las empresas</option>
             {empresas.map((e) => <option key={e.id} value={e.registro_iva}>{e.nombre}</option>)}
@@ -401,6 +425,12 @@ export default function Mensajes() {
             <option value="enviado">Enviado</option>
             <option value="pendiente">Pendiente</option>
             <option value="fallido">Fallido</option>
+          </select>
+
+          <select value={filters.recepcion} onChange={(e) => setFilter('recepcion', e.target.value)} className={inp}>
+            <option value="">Toda la recepcion</option>
+            <option value="confirmada">Confirmada</option>
+            <option value="pendiente">Pendiente</option>
           </select>
 
           <div className="flex flex-col">
@@ -446,6 +476,7 @@ export default function Mensajes() {
               <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Empresa</th>
               <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Título</th>
               <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Estado</th>
+              <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Recepcion</th>
               <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Fecha</th>
               <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Ver</th>
             </tr>
@@ -454,14 +485,14 @@ export default function Mensajes() {
             {isLoading ? (
               Array.from({ length: 8 }).map((_, i) => (
                 <tr key={i}>
-                  {Array.from({ length: 6 }).map((_, j) => (
+                  {Array.from({ length: 7 }).map((_, j) => (
                     <td key={j} className="px-5 py-4"><div className="h-4 bg-gray-100 rounded animate-pulse" /></td>
                   ))}
                 </tr>
               ))
             ) : mensajes.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-5 py-14 text-center">
+                <td colSpan={7} className="px-5 py-14 text-center">
                   <div className="flex flex-col items-center gap-2 text-gray-400">
                     <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
@@ -488,6 +519,14 @@ export default function Mensajes() {
                     <p className="text-xs text-gray-500 truncate max-w-xs">{msg.cuerpo?.slice(0, 60)}{msg.cuerpo?.length > 60 ? '…' : ''}</p>
                   </td>
                   <td className="px-5 py-3"><EstadoBadge estado={msg.estado} /></td>
+                  <td className="px-5 py-3">
+                    <div className="flex flex-col gap-1">
+                      <RecepcionBadge confirmadaAt={msg.recepcion_confirmada_at} />
+                      <span className="text-xs text-gray-500 whitespace-nowrap">
+                        {msg.recepcion_confirmada_at ? formatDate(msg.recepcion_confirmada_at) : 'Sin confirmar'}
+                      </span>
+                    </div>
+                  </td>
                   <td className="px-5 py-3 text-xs text-gray-500 whitespace-nowrap">{formatDate(msg.enviado_at ?? msg.created_at)}</td>
                   <td className="px-5 py-3">
                     <button

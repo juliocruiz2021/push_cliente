@@ -128,6 +128,119 @@ Registra o actualiza el token FCM de un dispositivo móvil. Endpoint público, s
 
 ---
 
+### POST `/clientes/confirmar-recepcion`
+
+Confirma que el destinatario abrió el detalle de una notificación. Endpoint público, sin autenticación.
+
+**Rate limit:** 60 peticiones por minuto.
+
+**Request:**
+```json
+{
+  "mensaje_id": 15,
+  "registro_iva": "12345-6",
+  "numero_celular": "70001111",
+  "device_uuid": "uuid-del-dispositivo"
+}
+```
+
+| Campo | Tipo | Requerido | Descripción |
+|-------|------|-----------|-------------|
+| `mensaje_id` | integer | Sí | ID del mensaje enviado por el backend |
+| `registro_iva` | string | Sí | Empresa propietaria del mensaje |
+| `numero_celular` | string | Sí | Debe coincidir con `numero_destino` del mensaje |
+| `device_uuid` | string | No | UUID del dispositivo que confirma |
+
+**Response 200:**
+```json
+{
+  "message": "Recepcion confirmada correctamente.",
+  "mensaje_id": 15,
+  "recepcion_confirmada_at": "2026-03-28T03:20:00.000000Z"
+}
+```
+
+**Response 403:**
+```json
+{
+  "message": "Este dispositivo no corresponde al destinatario del mensaje."
+}
+```
+
+---
+
+### POST `/clientes-compartidos/sync`
+
+Sincroniza la lista de clientes compartidos de una empresa. Endpoint público, sin autenticación.
+
+**Rate limit:** 30 peticiones por minuto.
+
+**Request:**
+```json
+{
+  "registro_iva": "12345-6",
+  "numero_celular": "70001111",
+  "nombre_usuario": "OPERADOR 1",
+  "contactos": [
+    {
+      "sync_id": "sync-001",
+      "updated_at": "2026-03-28T04:00:00Z",
+      "nombre": "JUAN PEREZ",
+      "dui": "12345678-9",
+      "registro_iva": "99887-1",
+      "giro": "COMERCIAL",
+      "direccion": "SAN SALVADOR",
+      "celular": "7000-0000",
+      "email": "juan@example.com"
+    }
+  ]
+}
+```
+
+| Campo | Tipo | Requerido | Descripción |
+|-------|------|-----------|-------------|
+| `registro_iva` | string | Sí | Empresa dueña de la lista compartida |
+| `numero_celular` | string | No | Identificador del dispositivo que sincroniza |
+| `nombre_usuario` | string | No | Nombre del operador que hizo el cambio |
+| `contactos` | array | No | Lista completa de clientes locales a consolidar |
+| `contactos[].sync_id` | string | Sí | ID estable por cliente para sincronización |
+| `contactos[].updated_at` | date | No | Fecha de última edición del cliente |
+| `contactos[].nombre` | string | Sí | Nombre del cliente |
+| `contactos[].dui` | string | No | DUI del cliente |
+| `contactos[].registro_iva` | string | No | Registro IVA del cliente |
+| `contactos[].giro` | string | No | Giro del cliente |
+| `contactos[].direccion` | string | No | Dirección del cliente |
+| `contactos[].celular` | string | No | Teléfono del cliente |
+| `contactos[].email` | string | No | Email del cliente |
+
+**Response 200:**
+```json
+{
+  "message": "Contactos sincronizados correctamente.",
+  "contactos": [
+    {
+      "id": 1,
+      "empresa_id": 1,
+      "sync_id": "sync-001",
+      "nombre": "JUAN PEREZ",
+      "dui": "12345678-9",
+      "registro_iva": "99887-1",
+      "giro": "COMERCIAL",
+      "direccion": "SAN SALVADOR",
+      "celular": "7000-0000",
+      "email": "juan@example.com",
+      "creado_por": "OPERADOR 1",
+      "actualizado_por": "OPERADOR 1",
+      "created_at": "2026-03-28T04:00:00.000000Z",
+      "updated_at": "2026-03-28T04:00:00.000000Z"
+    }
+  ],
+  "server_time": "2026-03-28T04:00:05.000000Z"
+}
+```
+
+---
+
 ## Dashboard
 
 ### GET `/dashboard`

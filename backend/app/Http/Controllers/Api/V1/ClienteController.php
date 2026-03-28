@@ -124,4 +124,48 @@ class ClienteController extends Controller
             'estado'     => $mensaje->fresh()->estado,
         ], 200);
     }
+
+    public function confirmarRecepcion(Request $request)
+    {
+        $validated = $request->validate([
+            'mensaje_id'     => 'required|integer|exists:mensajes,id',
+            'registro_iva'   => 'required|string|max:50',
+            'numero_celular' => 'required|string|max:20',
+            'device_uuid'    => 'nullable|string|max:100',
+        ]);
+
+        $empresa = Empresa::where('registro_iva', $validated['registro_iva'])
+            ->where('activo', true)
+            ->firstOrFail();
+
+        $mensaje = Mensaje::where('id', $validated['mensaje_id'])
+            ->where('empresa_id', $empresa->id)
+            ->firstOrFail();
+
+        if ($mensaje->numero_destino !== $validated['numero_celular']) {
+            return response()->json([
+                'message' => 'Este dispositivo no corresponde al destinatario del mensaje.',
+            ], 403);
+        }
+
+        if ($mensaje->recepcion_confirmada_at) {
+            return response()->json([
+                'message'                 => 'La recepcion ya estaba confirmada.',
+                'mensaje_id'              => $mensaje->id,
+                'recepcion_confirmada_at' => $mensaje->recepcion_confirmada_at,
+            ]);
+        }
+
+        $mensaje->update([
+            'recepcion_confirmada_at'  => now(),
+            'recepcion_confirmada_por' => $validated['numero_celular'],
+            'recepcion_device_uuid'    => $validated['device_uuid'] ?? null,
+        ]);
+
+        return response()->json([
+            'message'                 => 'Recepcion confirmada correctamente.',
+            'mensaje_id'              => $mensaje->id,
+            'recepcion_confirmada_at' => $mensaje->fresh()->recepcion_confirmada_at,
+        ]);
+    }
 }

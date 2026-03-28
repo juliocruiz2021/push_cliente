@@ -22,6 +22,9 @@ class Mensaje extends Model
         'estado',
         'proveedor',
         'enviado_at',
+        'recepcion_confirmada_at',
+        'recepcion_confirmada_por',
+        'recepcion_device_uuid',
     ];
 
     /**
@@ -30,8 +33,9 @@ class Mensaje extends Model
      * @var array<string, string>
      */
     protected $casts = [
-        'payload_json' => 'array',
-        'enviado_at'   => 'datetime',
+        'payload_json'            => 'array',
+        'enviado_at'              => 'datetime',
+        'recepcion_confirmada_at' => 'datetime',
     ];
 
     /**

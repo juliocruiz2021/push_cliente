@@ -42,4 +42,12 @@ class Empresa extends Model
     {
         return $this->hasMany(Mensaje::class);
     }
+
+    /**
+     * Get all shared clients for this empresa.
+     */
+    public function clientesCompartidos(): HasMany
+    {
+        return $this->hasMany(ClienteCompartido::class);
+    }
 }

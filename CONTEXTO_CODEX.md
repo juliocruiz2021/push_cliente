@@ -7,8 +7,8 @@ Trabaja junto con la app móvil Flutter "Facturame".
 
 | Proyecto | Repo | Branch activo |
 |---|---|---|
-| Backend + Frontend web | `juliocruiz2021/push_cliente` | `feature/push_cliente_backend` |
-| App móvil Flutter | `juliocruiz2021/facturame` | `feature/firebase_push_setup` |
+| Backend + Frontend web | `juliocruiz2021/push_cliente` | `feature/confirmacion-recepcion-limpieza` |
+| App móvil Flutter | `juliocruiz2021/facturame` | `feature/confirmacion-recepcion-limpieza` |
 
 ---
 
@@ -58,6 +58,11 @@ mensajes
   estado ENUM(pendiente|enviado|fallido),
   proveedor, enviado_at, timestamps
 
+clientes_compartidos
+  id, empresa_id (FK), sync_id, nombre, dui, registro_iva,
+  giro, direccion, celular, email, creado_por, actualizado_por, timestamps
+  UNIQUE: (empresa_id, sync_id)
+
 admin_users
   id, name, email, password, timestamps
 
@@ -74,6 +79,8 @@ logs_auditoria
 2024_01_01_000005_create_logs_auditoria_table.php
 2026_03_27_000001_add_nombre_servidor_to_clientes_empresa.php
 2026_03_28_023200_create_personal_access_tokens_table.php
+2026_03_28_030001_add_recepcion_confirmada_to_mensajes_table.php
+2026_03_28_040001_create_clientes_compartidos_table.php
 ```
 
 ---
@@ -112,6 +119,10 @@ POST /api/v1/clientes/enviar-datos
   Body: {registro_iva, numero_destino, titulo, cuerpo}
   Lógica: busca clientes_empresa WHERE numero_celular = numero_destino
           → obtiene fcm_token → envía FCM → guarda en mensajes
+
+POST /api/v1/clientes/confirmar-recepcion
+  Body: {mensaje_id, registro_iva, numero_celular, device_uuid}
+  Lógica: valida destinatario → marca `recepcion_confirmada_at`
 ```
 
 ### Auth — throttle 10/min
@@ -218,7 +229,8 @@ Backend Laravel
 Teléfono destino (app Flutter)
   │ 6. Recibe push → banner o diálogo con campos del JSON
   │    {empresa, servidor, data: {nombre, dui, concepto, monto...}}
-  │ 7. Al cerrar diálogo → badge decrementado
+  │ 7. Al abrir detalle → POST /api/v1/clientes/confirmar-recepcion
+  │ 8. Al cerrar diálogo → badge decrementado
 
 Panel web React (admin)
   │ Polling 20s → GET /api/v1/mensajes/nuevos

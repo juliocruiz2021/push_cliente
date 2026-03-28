@@ -58,6 +58,7 @@ class MensajeController extends Controller
         $request->validate([
             'registro_iva' => 'nullable|string',
             'estado'       => 'nullable|in:enviado,pendiente,fallido',
+            'recepcion'    => 'nullable|in:confirmada,pendiente',
             'fecha_desde'  => 'nullable|date',
             'fecha_hasta'  => 'nullable|date',
             'search'       => 'nullable|string|max:100',
@@ -79,6 +80,14 @@ class MensajeController extends Controller
 
         if ($request->filled('estado')) {
             $query->where('estado', $request->estado);
+        }
+
+        if ($request->filled('recepcion')) {
+            if ($request->recepcion === 'confirmada') {
+                $query->whereNotNull('recepcion_confirmada_at');
+            } else {
+                $query->whereNull('recepcion_confirmada_at');
+            }
         }
 
         if ($request->filled('fecha_desde')) {
