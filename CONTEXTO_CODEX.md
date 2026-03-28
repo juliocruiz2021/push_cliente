@@ -5,6 +5,12 @@
 **Push Cliente** es el backend y panel web del sistema de notificaciones push para empresas.
 Trabaja junto con la app móvil Flutter "Facturame".
 
+## Despliegue actual
+
+- Panel web productivo: `https://facturame.appsigasv.com`
+- La API pÃºblica para la app mÃ³vil sale por `https://facturame.appsigasv.com/api/v1`
+- En el VPS el panel y el backend siguen corriendo internamente en `8081` y `8082`, publicados por Apache reverse proxy + Let's Encrypt, sin tocar el sitio legado de `appsigasv.com`
+
 | Proyecto | Repo | Branch activo |
 |---|---|---|
 | Backend + Frontend web | `juliocruiz2021/push_cliente` | `feature/confirmacion-recepcion-limpieza` |
