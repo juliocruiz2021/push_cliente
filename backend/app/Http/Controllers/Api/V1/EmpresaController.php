@@ -22,9 +22,11 @@ class EmpresaController extends Controller
         }
 
         if ($request->filled('search')) {
-            $query->where(function ($q) use ($request) {
-                $q->where('nombre', 'ilike', '%' . $request->search . '%')
-                  ->orWhere('registro_iva', 'ilike', '%' . $request->search . '%');
+            $search = '%' . mb_strtolower($request->search) . '%';
+            $query->where(function ($q) use ($search) {
+                $q->whereRaw('LOWER(nombre) LIKE ?', [$search])
+                  ->orWhereRaw('LOWER(registro_iva) LIKE ?', [$search])
+                  ->orWhereRaw('LOWER(nombre_servidor) LIKE ?', [$search]);
             });
         }
 
@@ -43,12 +45,14 @@ class EmpresaController extends Controller
         $validated = $request->validate([
             'registro_iva' => 'required|string|max:50|unique:empresas,registro_iva',
             'nombre'       => 'required|string|max:255',
+            'nombre_servidor' => 'nullable|string|max:150',
             'activo'       => 'nullable|boolean',
         ]);
 
         $empresa = Empresa::create([
             'registro_iva' => $validated['registro_iva'],
             'nombre'       => $validated['nombre'],
+            'nombre_servidor' => $validated['nombre_servidor'] ?? null,
             'activo'       => $validated['activo'] ?? true,
         ]);
 
@@ -84,6 +88,7 @@ class EmpresaController extends Controller
         $validated = $request->validate([
             'registro_iva' => 'sometimes|required|string|max:50|unique:empresas,registro_iva,' . $empresa->id,
             'nombre'       => 'sometimes|required|string|max:255',
+            'nombre_servidor' => 'nullable|string|max:150',
             'activo'       => 'nullable|boolean',
         ]);
 

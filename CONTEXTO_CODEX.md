@@ -52,7 +52,7 @@ Trabaja junto con la app móvil Flutter "Facturame".
 
 ```
 empresas
-  id, nombre, registro_iva, activo, timestamps
+  id, nombre, nombre_servidor, registro_iva, activo, timestamps
 
 clientes_empresa
   id, empresa_id (FK), numero_celular, nombre_usuario, nombre_servidor,
@@ -89,6 +89,7 @@ logs_auditoria
 2026_03_28_030001_add_recepcion_confirmada_to_mensajes_table.php
 2026_03_28_040001_create_clientes_compartidos_table.php
 2026_03_28_170100_create_sessions_table.php
+2026_03_28_173000_add_nombre_servidor_to_empresas_table.php
 ```
 
 ---

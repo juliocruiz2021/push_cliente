@@ -15,6 +15,7 @@ class Empresa extends Model
     protected $fillable = [
         'registro_iva',
         'nombre',
+        'nombre_servidor',
         'activo',
     ];
 
