@@ -88,7 +88,15 @@ logs_auditoria
 2026_03_28_023200_create_personal_access_tokens_table.php
 2026_03_28_030001_add_recepcion_confirmada_to_mensajes_table.php
 2026_03_28_040001_create_clientes_compartidos_table.php
+2026_03_28_170100_create_sessions_table.php
 ```
+
+---
+
+## Nota operativa
+
+- El panel web autentica con `Bearer tokens` de Sanctum; no depende de sesiÃ³n stateful por cookies.
+- Se desactivÃ³ `statefulApi()` tras corregir un `CSRF token mismatch` que solo aparecÃ­a en producciÃ³n al iniciar sesiÃ³n desde navegador.
 
 ---
 
