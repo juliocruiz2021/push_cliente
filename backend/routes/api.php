@@ -40,6 +40,9 @@ Route::prefix('v1')->group(function () {
         Route::apiResource('empresas', EmpresaController::class);
 
         Route::get('clientes', [ClienteController::class, 'index']);
+        Route::post('clientes', [ClienteController::class, 'store']);
+        Route::put('clientes/{cliente}', [ClienteController::class, 'update']);
+        Route::delete('clientes/{cliente}', [ClienteController::class, 'destroy']);
         Route::get('clientes-compartidos', [ClienteCompartidoController::class, 'index']);
 
         Route::post('mensajes/enviar', [MensajeController::class, 'enviar']);
